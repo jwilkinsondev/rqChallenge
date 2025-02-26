@@ -1,0 +1,9 @@
+###
+// @no-log
+// @name get all employees
+GET http://localhost:8111/
+
+###
+// @no-log
+// @name get all employees from server directly
+GET http://localhost:8112/api/v1/employee

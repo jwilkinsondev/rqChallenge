@@ -3,9 +3,14 @@ plugins {
 }
 
 dependencies {
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.18.2'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
 }
 
 springBoot {
     mainClass = 'com.reliaquest.api.ApiApplication'
+}
+
+test {
+    useJUnitPlatform()
 }
