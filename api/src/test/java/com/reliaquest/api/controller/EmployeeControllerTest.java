@@ -3,6 +3,7 @@ package com.reliaquest.api.controller;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.when;
 
+import com.reliaquest.api.exceptions.ExternalApiException;
 import com.reliaquest.api.models.Employee;
 import com.reliaquest.api.services.EmployeeService;
 import java.util.ArrayList;
@@ -53,7 +54,7 @@ class EmployeeControllerTest {
 
     @Test
     void getAllEmployeesShouldHandleException() {
-        when(employeeService.getAllEmployees()).thenThrow(new RuntimeException("An error occurred"));
+        when(employeeService.getAllEmployees()).thenThrow(new ExternalApiException("An error occurred"));
         ResponseEntity<List> result = employeeController.getAllEmployees();
 
         assertNotNull(result);
@@ -62,7 +63,27 @@ class EmployeeControllerTest {
     }
 
     @Test
-    void getEmployeesByNameSearch() {}
+    void getEmployeesByNameSearch() {
+        ArrayList<Employee> employees = new ArrayList<>();
+        employees.add(new Employee(UUID.randomUUID(), "john", "doe", 26, "IT Technician", "jdoe@test.com"));
+
+        when(employeeService.getEmployeesByNameSearch("john")).thenReturn(employees);
+        ResponseEntity<List> result = employeeController.getEmployeesByNameSearch("john");
+        assertEquals(HttpStatus.OK, result.getStatusCode());
+        assertEquals(employees, result.getBody());
+        assertEquals(1, Objects.requireNonNull(result.getBody()).size());
+        assertEquals(employees.get(0), result.getBody().get(0));
+    }
+
+    @Test
+    void getEmployeesByNameSearchShouldHandleException() {
+        when(employeeService.getEmployeesByNameSearch("john")).thenThrow(new ExternalApiException("An error occurred"));
+
+        ResponseEntity<List> result = employeeController.getEmployeesByNameSearch("john");
+        assertNotNull(result);
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, result.getStatusCode());
+        assertNull(result.getBody());
+    }
 
     @Test
     void getEmployeeById() {}

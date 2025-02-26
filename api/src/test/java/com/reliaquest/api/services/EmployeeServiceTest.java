@@ -3,13 +3,14 @@ package com.reliaquest.api.services;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 import com.reliaquest.api.exceptions.ExternalApiException;
 import com.reliaquest.api.models.Employee;
 import com.reliaquest.api.models.EmployeeResponse;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -79,5 +80,99 @@ class EmployeeServiceTest {
         ExternalApiException exception =
                 assertThrows(ExternalApiException.class, () -> employeeService.getAllEmployees());
         assertEquals("Failed to retrieve employees. Rate limit exceeded", exception.getMessage());
+    }
+
+    @Test
+    void getEmployeesByNameSearch() {
+        List<Employee> employees = new ArrayList<>();
+        Employee employee1 =
+                new Employee(UUID.randomUUID(), "John Doe", "57000", 54, "Software Engineer", "foo@bar.com");
+        Employee employee2 =
+                new Employee(UUID.randomUUID(), "Billy Sue", "57000", 54, "Software Engineer", "foo@bar.com");
+        Employee employee3 =
+                new Employee(UUID.randomUUID(), "Bob Test", "57000", 54, "Software Engineer", "foo@bar.com");
+        Employee employee4 =
+                new Employee(UUID.randomUUID(), "Alice Tester", "57000", 54, "Software Engineer", "foo@bar.com");
+        Employee employee5 =
+                new Employee(UUID.randomUUID(), "Foo Bar", "57000", 54, "Software Engineer", "foo@bar.com");
+        employees.add(employee1);
+        employees.add(employee2);
+        employees.add(employee3);
+        employees.add(employee4);
+        employees.add(employee5);
+        EmployeeResponse body = new EmployeeResponse(employees);
+
+        when(restTemplate.exchange(
+                        eq("testEndpoint"), eq(HttpMethod.GET), eq(null), any(ParameterizedTypeReference.class)))
+                .thenReturn(ResponseEntity.ok(body));
+
+        List<Employee> response = employeeService.getEmployeesByNameSearch("Test");
+        assertEquals(2, response.size());
+        assertEquals(employees.get(2), response.get(0));
+        assertEquals(employees.get(3), response.get(1));
+    }
+
+    @Test
+    void getEmployeesByNameSearchReturnsEmptyListForNoMatches() {
+        List<Employee> employees = new ArrayList<>();
+        Employee employee =
+                new Employee(UUID.randomUUID(), "John Doe", "57000", 54, "Software Engineer", "foo@bar.com");
+        employees.add(employee);
+
+        EmployeeResponse body = new EmployeeResponse(employees);
+
+        when(restTemplate.exchange(
+                        eq("testEndpoint"), eq(HttpMethod.GET), eq(null), any(ParameterizedTypeReference.class)))
+                .thenReturn(ResponseEntity.ok(body));
+
+        List<Employee> response = employeeService.getEmployeesByNameSearch("Test");
+        assertEquals(0, response.size());
+    }
+
+    @Test
+    void getEmployeesByNameSearchIsCaseInsensitive() {
+        List<Employee> employees = new ArrayList<>();
+        Employee employee =
+                new Employee(UUID.randomUUID(), "John Doe", "57000", 54, "Software Engineer", "foo@bar.com");
+        employees.add(employee);
+
+        EmployeeResponse body = new EmployeeResponse(employees);
+
+        when(restTemplate.exchange(
+                        eq("testEndpoint"), eq(HttpMethod.GET), eq(null), any(ParameterizedTypeReference.class)))
+                .thenReturn(ResponseEntity.ok(body));
+
+        List<Employee> response = employeeService.getEmployeesByNameSearch("John Doe");
+        assertEquals(employees.get(0), response.get(0));
+
+        employees = new ArrayList<>();
+        employee = new Employee(UUID.randomUUID(), "JOHN doe", "57000", 54, "Software Engineer", "foo@bar.com");
+        employees.add(employee);
+
+        body = new EmployeeResponse(employees);
+
+        when(restTemplate.exchange(
+                        eq("testEndpoint"), eq(HttpMethod.GET), eq(null), any(ParameterizedTypeReference.class)))
+                .thenReturn(ResponseEntity.ok(body));
+
+        response = employeeService.getEmployeesByNameSearch("John Doe");
+        assertEquals(employees.get(0), response.get(0));
+    }
+
+    @Test
+    void getEmployeesByNameSearchHandlesPartialMatch() {
+        List<Employee> employees = new ArrayList<>();
+        Employee employee =
+                new Employee(UUID.randomUUID(), "one fish two fish", "57000", 54, "Software Engineer", "foo@bar.com");
+        employees.add(employee);
+
+        EmployeeResponse body = new EmployeeResponse(employees);
+
+        when(restTemplate.exchange(
+                        eq("testEndpoint"), eq(HttpMethod.GET), eq(null), any(ParameterizedTypeReference.class)))
+                .thenReturn(ResponseEntity.ok(body));
+
+        List<Employee> response = employeeService.getEmployeesByNameSearch("sh tw");
+        assertEquals(employees.get(0), response.get(0));
     }
 }
