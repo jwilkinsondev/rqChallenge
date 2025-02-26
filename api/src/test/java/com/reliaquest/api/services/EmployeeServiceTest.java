@@ -3,6 +3,7 @@ package com.reliaquest.api.services;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 
 import com.reliaquest.api.exceptions.ExternalApiException;
@@ -18,6 +19,7 @@ import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 class EmployeeServiceTest {
@@ -55,16 +57,15 @@ class EmployeeServiceTest {
         when(restTemplate.exchange(
                         eq("testEndpoint"), eq(HttpMethod.GET), eq(null), any(ParameterizedTypeReference.class)))
                 .thenReturn(ResponseEntity.ok(null));
-        ExternalApiException exception =
-                assertThrows(ExternalApiException.class, () -> employeeService.getAllEmployees());
-        assertEquals("Failed to retrieve employees", exception.getMessage());
+        List<Employee> result = employeeService.getAllEmployees();
+        assertEquals(0, result.size());
     }
 
     @Test
     void getAllEmployeesShouldHandleNon200() {
-        when(restTemplate.exchange(
-                        eq("testEndpoint"), eq(HttpMethod.GET), eq(null), any(ParameterizedTypeReference.class)))
-                .thenReturn(ResponseEntity.status(HttpStatus.BAD_REQUEST).build());
+        doThrow(new HttpClientErrorException(HttpStatus.BAD_GATEWAY))
+                .when(restTemplate)
+                .exchange(eq("testEndpoint"), eq(HttpMethod.GET), eq(null), any(ParameterizedTypeReference.class));
         ExternalApiException exception =
                 assertThrows(ExternalApiException.class, () -> employeeService.getAllEmployees());
         assertEquals("Failed to retrieve employees", exception.getMessage());
@@ -72,9 +73,9 @@ class EmployeeServiceTest {
 
     @Test
     void getAllEmployeesShouldHandleRateLimit() {
-        when(restTemplate.exchange(
-                        eq("testEndpoint"), eq(HttpMethod.GET), eq(null), any(ParameterizedTypeReference.class)))
-                .thenReturn(ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).build());
+        doThrow(new HttpClientErrorException(HttpStatus.TOO_MANY_REQUESTS))
+                .when(restTemplate)
+                .exchange(eq("testEndpoint"), eq(HttpMethod.GET), eq(null), any(ParameterizedTypeReference.class));
         ExternalApiException exception =
                 assertThrows(ExternalApiException.class, () -> employeeService.getAllEmployees());
         assertEquals("Failed to retrieve employees. Rate limit exceeded", exception.getMessage());

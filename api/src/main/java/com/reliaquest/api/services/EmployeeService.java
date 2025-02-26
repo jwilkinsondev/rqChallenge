@@ -11,6 +11,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 @Service
@@ -25,17 +26,17 @@ public class EmployeeService implements GetAllEmployees {
 
     @Override
     public List<Employee> getAllEmployees() {
-
-        ResponseEntity<EmployeeResponse> response =
-                restTemplate.exchange(employeesEndpoint, HttpMethod.GET, null, new ParameterizedTypeReference<>() {});
-
-        // todo add backoff strategy
-        if (HttpStatus.OK == response.getStatusCode() && response.getBody() != null) {
-            return response.getBody().data();
-        } else if (HttpStatus.TOO_MANY_REQUESTS == response.getStatusCode()) {
-            throw new ExternalApiException("Failed to retrieve employees. Rate limit exceeded");
-        } else {
-            throw new ExternalApiException("Failed to retrieve employees");
+        try {
+            ResponseEntity<EmployeeResponse> response = restTemplate.exchange(
+                    employeesEndpoint, HttpMethod.GET, null, new ParameterizedTypeReference<>() {});
+            return response.getBody() != null ? response.getBody().data() : List.of();
+        } catch (HttpClientErrorException e) {
+            // todo add backoff strategy
+            if (HttpStatus.TOO_MANY_REQUESTS == e.getStatusCode()) {
+                throw new ExternalApiException("Failed to retrieve employees. Rate limit exceeded");
+            } else {
+                throw new ExternalApiException("Failed to retrieve employees");
+            }
         }
     }
 }
