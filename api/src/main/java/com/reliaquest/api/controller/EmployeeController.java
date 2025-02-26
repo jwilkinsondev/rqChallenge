@@ -22,7 +22,6 @@ public class EmployeeController implements IEmployeeController {
 
     @Override
     public ResponseEntity<List> getAllEmployees() {
-//        todo handle rate limiting
         try {
             return ResponseEntity.ok(employeeService.getAllEmployees());
         } catch (Exception e) {
