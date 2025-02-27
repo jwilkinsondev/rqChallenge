@@ -22,6 +22,8 @@ public class EmployeeController implements IEmployeeController {
         this.employeeService = employeeService;
     }
 
+    //    todo handle rate limit response for all these methods
+    //    todo return bad request status as appropriate
     @Override
     public ResponseEntity<List> getAllEmployees() {
         try {
@@ -57,17 +59,34 @@ public class EmployeeController implements IEmployeeController {
         }
     }
 
-    //    todo implement the rest of the methods
     @Override
     public ResponseEntity<Integer> getHighestSalaryOfEmployees() {
-        return null;
+        try {
+            List<Employee> employees = employeeService.getAllEmployees();
+            List<Employee> highestPaidEmployees = employeeService.getNHighestSalaries(1, employees);
+            int highestSalary = Integer.parseInt(highestPaidEmployees.get(0).salary());
+            return ResponseEntity.ok(highestSalary);
+        } catch (Exception e) {
+            logger.error("Error getting highest salary of employees", e);
+            return ResponseEntity.status(INTERNAL_SERVER_ERROR).build();
+        }
     }
 
     @Override
     public ResponseEntity<List<String>> getTopTenHighestEarningEmployeeNames() {
-        return null;
+        try {
+            List<Employee> employees = employeeService.getAllEmployees();
+            List<Employee> highestPaidEmployees = employeeService.getNHighestSalaries(10, employees);
+            List<String> names =
+                    highestPaidEmployees.stream().map(Employee::name).toList();
+            return ResponseEntity.ok(names);
+        } catch (Exception e) {
+            logger.error("Error getting top ten highest earning employee names", e);
+            return ResponseEntity.status(INTERNAL_SERVER_ERROR).build();
+        }
     }
 
+    //    todo implement the rest of the methods
     @Override
     public ResponseEntity createEmployee(Object employeeInput) {
         return null;

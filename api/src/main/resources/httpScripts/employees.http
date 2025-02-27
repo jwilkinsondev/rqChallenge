@@ -27,4 +27,14 @@ GET http://localhost:8111/search/Teddy
 // @name get employee by id
 GET http://localhost:8111/b7164432-84a5-4da2-aacf-eedab9fb1c67
 
+###
+// @no-log
+// @name get highest paied employee
+GET http://localhost:8111/highestSalary
+
+###
+// @no-log
+// @name get ten highest earners
+GET http://localhost:8111/topTenHighestEarningEmployeeNames
+
 

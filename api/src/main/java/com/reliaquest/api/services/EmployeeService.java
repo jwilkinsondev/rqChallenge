@@ -7,8 +7,8 @@ import com.reliaquest.api.models.EmployeeResponse;
 import com.reliaquest.api.ports.GetAllEmployees;
 import com.reliaquest.api.ports.GetEmployeeById;
 import com.reliaquest.api.ports.GetEmployeesByNameSearch;
-import java.util.List;
-import java.util.Optional;
+import com.reliaquest.api.ports.GetNHighestSalaries;
+import java.util.*;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpMethod;
@@ -19,7 +19,8 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 @Service
-public class EmployeeService implements GetAllEmployees, GetEmployeesByNameSearch, GetEmployeeById {
+public class EmployeeService
+        implements GetAllEmployees, GetEmployeesByNameSearch, GetEmployeeById, GetNHighestSalaries {
     private final String employeesEndpoint;
     private final RestTemplate restTemplate;
 
@@ -70,5 +71,23 @@ public class EmployeeService implements GetAllEmployees, GetEmployeesByNameSearc
                 throw new ExternalApiException("Failed to retrieve employee");
             }
         }
+    }
+
+    @Override
+    public List<Employee> getNHighestSalaries(int n, List<Employee> employees) throws NumberFormatException {
+        if (n <= 0 || employees == null) {
+            return List.of();
+        }
+        PriorityQueue<Employee> pq = new PriorityQueue<>(Comparator.comparingInt(e -> Integer.parseInt(e.salary())));
+
+        for (Employee employee : employees) {
+            pq.offer(employee);
+            if (pq.size() > n) {
+                pq.poll();
+            }
+        }
+        ArrayList<Employee> highSalaries = new ArrayList<>(pq);
+        Collections.reverse(highSalaries);
+        return highSalaries;
     }
 }

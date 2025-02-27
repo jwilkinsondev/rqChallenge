@@ -232,4 +232,92 @@ class EmployeeServiceTest {
                 assertThrows(ExternalApiException.class, () -> employeeService.getEmployeeById(id.toString()));
         assertEquals("Failed to retrieve employee", exception.getMessage());
     }
+
+    @Test
+    void getNHighestSalaries() {
+        List<Employee> employees = new ArrayList<>();
+        Employee employee0 = new Employee(UUID.randomUUID(), "John Doe", "0", 54, "Software Engineer", "foo@bar.com");
+        Employee employee1 = new Employee(UUID.randomUUID(), "John Doe", "1", 54, "Software Engineer", "foo@bar.com");
+        Employee employee2 = new Employee(UUID.randomUUID(), "John Doe", "2", 54, "Software Engineer", "foo@bar.com");
+        Employee employee3 = new Employee(UUID.randomUUID(), "John Doe", "3", 54, "Software Engineer", "foo@bar.com");
+        Employee employee4 = new Employee(UUID.randomUUID(), "John Doe", "4", 54, "Software Engineer", "foo@bar.com");
+        employees.add(employee0);
+        employees.add(employee1);
+        employees.add(employee2);
+        employees.add(employee3);
+        employees.add(employee4);
+
+        List<Employee> response = employeeService.getNHighestSalaries(3, employees);
+        assertEquals(3, response.size());
+        assertEquals(employee4, response.get(0));
+        assertEquals(employee3, response.get(1));
+        assertEquals(employee2, response.get(2));
+    }
+
+    @Test
+    void getNHighestSalariesShouldHandleEmptyList() {
+        List<Employee> employees = new ArrayList<>();
+        List<Employee> response = employeeService.getNHighestSalaries(3, employees);
+        assertEquals(0, response.size());
+    }
+
+    @Test
+    void getNHighestSalariesShouldHandleListSmallerThanN() {
+        List<Employee> employees = new ArrayList<>();
+        Employee employee0 = new Employee(UUID.randomUUID(), "John Doe", "0", 54, "Software Engineer", "foo@bar.com");
+        Employee employee1 = new Employee(UUID.randomUUID(), "John Doe", "1", 54, "Software Engineer", "foo@bar.com");
+        Employee employee2 = new Employee(UUID.randomUUID(), "John Doe", "2", 54, "Software Engineer", "foo@bar.com");
+        Employee employee3 = new Employee(UUID.randomUUID(), "John Doe", "3", 54, "Software Engineer", "foo@bar.com");
+        Employee employee4 = new Employee(UUID.randomUUID(), "John Doe", "4", 54, "Software Engineer", "foo@bar.com");
+        employees.add(employee0);
+        employees.add(employee1);
+        employees.add(employee2);
+        employees.add(employee3);
+        employees.add(employee4);
+
+        List<Employee> response = employeeService.getNHighestSalaries(10, employees);
+        assertEquals(5, response.size());
+        assertEquals(employee4, response.get(0));
+        assertEquals(employee0, response.get(4));
+    }
+
+    @Test
+    void getNHighestSalariesShouldHandleSmallN() {
+        List<Employee> employees = new ArrayList<>();
+        Employee employee0 = new Employee(UUID.randomUUID(), "John Doe", "0", 54, "Software Engineer", "foo@bar.com");
+        Employee employee1 = new Employee(UUID.randomUUID(), "John Doe", "1", 54, "Software Engineer", "foo@bar.com");
+        Employee employee2 = new Employee(UUID.randomUUID(), "John Doe", "2", 54, "Software Engineer", "foo@bar.com");
+        Employee employee3 = new Employee(UUID.randomUUID(), "John Doe", "3", 54, "Software Engineer", "foo@bar.com");
+        Employee employee4 = new Employee(UUID.randomUUID(), "John Doe", "4", 54, "Software Engineer", "foo@bar.com");
+        employees.add(employee0);
+        employees.add(employee1);
+        employees.add(employee2);
+        employees.add(employee3);
+        employees.add(employee4);
+
+        List<Employee> response = employeeService.getNHighestSalaries(0, employees);
+        assertEquals(0, response.size());
+
+        response = employeeService.getNHighestSalaries(-5, employees);
+        assertEquals(0, response.size());
+    }
+
+    @Test
+    void getNHighestSalariesShouldHandleNullList() {
+        List<Employee> response = employeeService.getNHighestSalaries(2, null);
+        assertEquals(0, response.size());
+    }
+
+    @Test
+    void getNHighestSalariesShouldHandleParseError() {
+        List<Employee> employees = new ArrayList<>();
+        Employee employee0 = new Employee(UUID.randomUUID(), "John Doe", "foo", 54, "Software Engineer", "foo@bar.com");
+        Employee employee1 = new Employee(UUID.randomUUID(), "John Doe", "foo", 54, "Software Engineer", "foo@bar.com");
+        employees.add(employee0);
+        employees.add(employee1);
+
+        assertThrows(NumberFormatException.class, () -> {
+            employeeService.getNHighestSalaries(2, employees);
+        });
+    }
 }
