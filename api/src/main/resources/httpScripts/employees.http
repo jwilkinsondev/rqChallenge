@@ -45,7 +45,7 @@ Content-Type: application/json
 
 {
   "name": "Teddy Foo",
-  "salary": "100000",
+  "salary": "1000000",
   "age": 25,
   "title": "Software Engineer"
 }

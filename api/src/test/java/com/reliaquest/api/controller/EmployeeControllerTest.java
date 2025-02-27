@@ -3,6 +3,7 @@ package com.reliaquest.api.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.reliaquest.api.exceptions.EmployeeValidationError;
 import com.reliaquest.api.exceptions.ExternalApiException;
+import com.reliaquest.api.exceptions.ExternalApiRateLimitException;
 import com.reliaquest.api.models.CreateEmployee;
 import com.reliaquest.api.models.Employee;
 import com.reliaquest.api.services.EmployeeService;
@@ -73,6 +74,17 @@ class EmployeeControllerTest {
     }
 
     @Test
+    void getAllEmployeesShouldHandleRateLimitException() {
+        when(employeeService.getAllEmployees()).thenThrow(new ExternalApiRateLimitException("An error occurred"));
+        @SuppressWarnings({"rawtypes", "Necessary to match interface"})
+        ResponseEntity<List> result = employeeController.getAllEmployees();
+
+        assertNotNull(result);
+        assertEquals(HttpStatus.TOO_MANY_REQUESTS, result.getStatusCode());
+        assertNull(result.getBody());
+    }
+
+    @Test
     void getEmployeesByNameSearch() {
         ArrayList<Employee> employees = new ArrayList<>();
         employees.add(new Employee(UUID.randomUUID(), "john", "doe", 26, "IT Technician", "jdoe@test.com"));
@@ -94,6 +106,18 @@ class EmployeeControllerTest {
         ResponseEntity<List> result = employeeController.getEmployeesByNameSearch("john");
         assertNotNull(result);
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, result.getStatusCode());
+        assertNull(result.getBody());
+    }
+
+    @Test
+    void getEmployeesByNameSearchShouldHandleRateLimitException() {
+        when(employeeService.getEmployeesByNameSearch("john"))
+                .thenThrow(new ExternalApiRateLimitException("An error occurred"));
+
+        @SuppressWarnings({"rawtypes", "Necessary to match interface"})
+        ResponseEntity<List> result = employeeController.getEmployeesByNameSearch("john");
+        assertNotNull(result);
+        assertEquals(HttpStatus.TOO_MANY_REQUESTS, result.getStatusCode());
         assertNull(result.getBody());
     }
 
@@ -129,6 +153,20 @@ class EmployeeControllerTest {
         assertNotNull(result);
         verify(employeeService, times(1)).getEmployeeById(id.toString());
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, result.getStatusCode());
+        assertNull(result.getBody());
+    }
+
+    @Test
+    void getEmployeeByIdShouldHandleRateLimitException() {
+        UUID id = UUID.randomUUID();
+        when(employeeService.getEmployeeById(id.toString()))
+                .thenThrow(new ExternalApiRateLimitException("An error occurred"));
+
+        @SuppressWarnings({"unchecked", "Interface requires raw type"})
+        ResponseEntity<Employee> result = employeeController.getEmployeeById(id.toString());
+        assertNotNull(result);
+        verify(employeeService, times(1)).getEmployeeById(id.toString());
+        assertEquals(HttpStatus.TOO_MANY_REQUESTS, result.getStatusCode());
         assertNull(result.getBody());
     }
 
@@ -172,6 +210,17 @@ class EmployeeControllerTest {
     }
 
     @Test
+    void getHighestSalaryOfEmployeesHandlesRateLimitException() {
+        doThrow(new ExternalApiRateLimitException("An error occurred"))
+                .when(employeeService)
+                .getAllEmployees();
+
+        ResponseEntity<Integer> result = employeeController.getHighestSalaryOfEmployees();
+        assertEquals(HttpStatus.TOO_MANY_REQUESTS, result.getStatusCode());
+        assertNull(result.getBody());
+    }
+
+    @Test
     void getTopTenHighestEarningEmployeeNames() {
         ArrayList<Employee> employees = new ArrayList<>();
         employees.add(new Employee(UUID.randomUUID(), "john", "123", 26, "IT Technician", "jdoe@test.com"));
@@ -199,6 +248,17 @@ class EmployeeControllerTest {
         doThrow(NumberFormatException.class).when(employeeService).getNHighestSalaries(10, employees);
         ResponseEntity<List<String>> result = employeeController.getTopTenHighestEarningEmployeeNames();
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, result.getStatusCode());
+        assertNull(result.getBody());
+    }
+
+    @Test
+    void getTopTenHighestEarningEmployeeNamesShouldHandleRateLimitException() {
+        doThrow(new ExternalApiRateLimitException("An error occurred"))
+                .when(employeeService)
+                .getAllEmployees();
+
+        ResponseEntity<List<String>> result = employeeController.getTopTenHighestEarningEmployeeNames();
+        assertEquals(HttpStatus.TOO_MANY_REQUESTS, result.getStatusCode());
         assertNull(result.getBody());
     }
 
@@ -273,6 +333,20 @@ class EmployeeControllerTest {
     }
 
     @Test
+    void createEmployeeShouldHandleRateLimitException() {
+        Object inputObject = new Object() {};
+        when(objectMapper.convertValue(inputObject, CreateEmployee.class)).thenReturn(mock(CreateEmployee.class));
+        doThrow(new ExternalApiRateLimitException("Slow down please"))
+                .when(employeeService)
+                .createEmployee(any());
+
+        @SuppressWarnings({"unchecked", "Interface requires raw type"})
+        ResponseEntity<Employee> result = employeeController.createEmployee(inputObject);
+        assertEquals(HttpStatus.TOO_MANY_REQUESTS, result.getStatusCode());
+        assertNull(result.getBody());
+    }
+
+    @Test
     void deleteEmployeeById() {
         UUID id = UUID.randomUUID();
         Employee employee = new Employee(id, "john doe", "123", 26, "IT Technician", "foo@bar.com");
@@ -336,6 +410,20 @@ class EmployeeControllerTest {
         verify(employeeService, times(1)).getEmployeeById(id.toString());
         verify(employeeService, never()).deleteEmployeeByName(anyString());
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, result.getStatusCode());
+        assertNull(result.getBody());
+    }
+
+    @Test
+    void deleteEmployeeByIdShouldHandleRateLimitException() {
+        doThrow(new ExternalApiRateLimitException("slow down please"))
+                .when(employeeService)
+                .getEmployeeById(anyString());
+        UUID id = UUID.randomUUID();
+
+        ResponseEntity<String> result = employeeController.deleteEmployeeById(id.toString());
+        verify(employeeService, times(1)).getEmployeeById(id.toString());
+        verify(employeeService, never()).deleteEmployeeByName(anyString());
+        assertEquals(HttpStatus.TOO_MANY_REQUESTS, result.getStatusCode());
         assertNull(result.getBody());
     }
 }

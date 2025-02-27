@@ -2,6 +2,7 @@ package com.reliaquest.api.services;
 
 import com.reliaquest.api.exceptions.EmployeeValidationError;
 import com.reliaquest.api.exceptions.ExternalApiException;
+import com.reliaquest.api.exceptions.ExternalApiRateLimitException;
 import com.reliaquest.api.models.Employee;
 import com.reliaquest.api.models.EmployeeListResponse;
 import com.reliaquest.api.models.EmployeeResponse;
@@ -44,7 +45,7 @@ public class EmployeeService
             return response.getBody() != null ? response.getBody().data() : List.of();
         } catch (HttpClientErrorException e) {
             if (HttpStatus.TOO_MANY_REQUESTS == e.getStatusCode()) {
-                throw new ExternalApiException("Failed to retrieve employees. Rate limit exceeded");
+                throw new ExternalApiRateLimitException("Failed to retrieve employees. Rate limit exceeded");
             } else {
                 throw new ExternalApiException("Failed to retrieve employees");
             }
@@ -71,7 +72,7 @@ public class EmployeeService
             return Optional.of(response.getBody().data());
         } catch (HttpClientErrorException e) {
             if (HttpStatus.TOO_MANY_REQUESTS == e.getStatusCode()) {
-                throw new ExternalApiException("Failed to retrieve employee. Rate limit exceeded");
+                throw new ExternalApiRateLimitException("Failed to retrieve employee. Rate limit exceeded");
             } else {
                 throw new ExternalApiException("Failed to retrieve employee");
             }
@@ -109,7 +110,7 @@ public class EmployeeService
             return response.getBody().data();
         } catch (HttpClientErrorException e) {
             if (HttpStatus.TOO_MANY_REQUESTS == e.getStatusCode()) {
-                throw new ExternalApiException("Failed to create employee. Rate limit exceeded");
+                throw new ExternalApiRateLimitException("Failed to create employee. Rate limit exceeded");
             } else {
                 throw new ExternalApiException("Failed to create employee.");
             }
@@ -118,7 +119,7 @@ public class EmployeeService
 
     @Override
     public boolean deleteEmployeeByName(String name) {
-        // todo flush out create and delete logic and error handling and rate limiting
+        // todo flush out create and delete logic and error handling
         try {
             Map<String, String> requestBody = Collections.singletonMap("name", name);
             HttpEntity<Map<String, String>> request = new HttpEntity<>(requestBody);
@@ -130,7 +131,7 @@ public class EmployeeService
             return (Boolean) response.getBody().get("data");
         } catch (HttpClientErrorException e) {
             if (HttpStatus.TOO_MANY_REQUESTS == e.getStatusCode()) {
-                throw new ExternalApiException("Failed to delete employee. Rate limit exceeded");
+                throw new ExternalApiRateLimitException("Failed to delete employee. Rate limit exceeded");
             } else {
                 throw new ExternalApiException("Failed to delete employee.");
             }

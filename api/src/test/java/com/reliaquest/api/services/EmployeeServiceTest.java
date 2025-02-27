@@ -2,6 +2,7 @@ package com.reliaquest.api.services;
 
 import com.reliaquest.api.exceptions.EmployeeValidationError;
 import com.reliaquest.api.exceptions.ExternalApiException;
+import com.reliaquest.api.exceptions.ExternalApiRateLimitException;
 import com.reliaquest.api.models.CreateEmployee;
 import com.reliaquest.api.models.Employee;
 import com.reliaquest.api.models.EmployeeListResponse;
@@ -82,8 +83,8 @@ class EmployeeServiceTest {
         doThrow(new HttpClientErrorException(HttpStatus.TOO_MANY_REQUESTS))
                 .when(restTemplate)
                 .exchange(eq("testEndpoint"), eq(HttpMethod.GET), eq(null), any(ParameterizedTypeReference.class));
-        ExternalApiException exception =
-                assertThrows(ExternalApiException.class, () -> employeeService.getAllEmployees());
+        ExternalApiRateLimitException exception =
+                assertThrows(ExternalApiRateLimitException.class, () -> employeeService.getAllEmployees());
         assertEquals("Failed to retrieve employees. Rate limit exceeded", exception.getMessage());
     }
 
@@ -220,8 +221,8 @@ class EmployeeServiceTest {
                 .when(restTemplate)
                 .exchange(
                         eq("testEndpoint/" + id), eq(HttpMethod.GET), eq(null), any(ParameterizedTypeReference.class));
-        ExternalApiException exception =
-                assertThrows(ExternalApiException.class, () -> employeeService.getEmployeeById(id.toString()));
+        ExternalApiRateLimitException exception =
+                assertThrows(ExternalApiRateLimitException.class, () -> employeeService.getEmployeeById(id.toString()));
         assertEquals("Failed to retrieve employee. Rate limit exceeded", exception.getMessage());
     }
 
@@ -373,8 +374,8 @@ class EmployeeServiceTest {
                         eq(HttpMethod.POST),
                         any(HttpEntity.class),
                         any(ParameterizedTypeReference.class));
-        ExternalApiException exception =
-                assertThrows(ExternalApiException.class, () -> employeeService.createEmployee(createEmployee));
+        ExternalApiRateLimitException exception =
+                assertThrows(ExternalApiRateLimitException.class, () -> employeeService.createEmployee(createEmployee));
         assertEquals("Failed to create employee. Rate limit exceeded", exception.getMessage());
     }
 
@@ -440,8 +441,8 @@ class EmployeeServiceTest {
                         any(HttpEntity.class),
                         any(ParameterizedTypeReference.class));
 
-        ExternalApiException exception =
-                assertThrows(ExternalApiException.class, () -> employeeService.deleteEmployeeByName("John Doe"));
+        ExternalApiRateLimitException exception = assertThrows(
+                ExternalApiRateLimitException.class, () -> employeeService.deleteEmployeeByName("John Doe"));
         assertEquals("Failed to delete employee. Rate limit exceeded", exception.getMessage());
     }
 
