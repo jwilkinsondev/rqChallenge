@@ -1,6 +1,7 @@
 package com.reliaquest.api.models;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.util.UUID;
 
 public record Employee(

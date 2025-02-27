@@ -6,13 +6,17 @@ import com.reliaquest.api.models.Employee;
 import com.reliaquest.api.models.EmployeeListResponse;
 import com.reliaquest.api.models.EmployeeResponse;
 import com.reliaquest.api.ports.*;
-import java.util.*;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.*;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
+
+import java.util.*;
 
 @Service
 public class EmployeeService
@@ -114,7 +118,7 @@ public class EmployeeService
 
     @Override
     public boolean deleteEmployeeByName(String name) {
-        // todo flushout create and delete logic and error handling and rate limiting
+        // todo flush out create and delete logic and error handling and rate limiting
         try {
             Map<String, String> requestBody = Collections.singletonMap("name", name);
             HttpEntity<Map<String, String>> request = new HttpEntity<>(requestBody);
@@ -135,11 +139,6 @@ public class EmployeeService
 
     public void validateCreateEmployee(com.reliaquest.api.models.CreateEmployee createEmployee)
             throws EmployeeValidationError {
-        // todo documentation
-        //      name (String | not blank),
-        //      salary (Integer | greater than zero),
-        //      age (Integer | min = 16, max = 75),
-        //      title (String | not blank)
         String message = "";
         if (createEmployee.name() == null || createEmployee.name().isBlank()) {
             message += "Name cannot be null or blank. ";

@@ -1,17 +1,11 @@
 package com.reliaquest.api.services;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
-
 import com.reliaquest.api.exceptions.EmployeeValidationError;
 import com.reliaquest.api.exceptions.ExternalApiException;
 import com.reliaquest.api.models.CreateEmployee;
 import com.reliaquest.api.models.Employee;
 import com.reliaquest.api.models.EmployeeListResponse;
 import com.reliaquest.api.models.EmployeeResponse;
-import java.util.*;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,6 +19,15 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.*;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.when;
+
+@SuppressWarnings({"unchecked", "restTemplate requires ParameterizedTypeReference"})
 class EmployeeServiceTest {
     EmployeeService employeeService;
     AutoCloseable closeable;
@@ -185,8 +188,9 @@ class EmployeeServiceTest {
         when(restTemplate.exchange(
                         eq("testEndpoint/" + id), eq(HttpMethod.GET), eq(null), any(ParameterizedTypeReference.class)))
                 .thenReturn(ResponseEntity.ok(new EmployeeResponse(employee)));
-        Employee response = employeeService.getEmployeeById(id.toString()).get();
-        assertEquals(employee, response);
+        Optional<Employee> response = employeeService.getEmployeeById(id.toString());
+        assertTrue(response.isPresent());
+        assertEquals(employee, response.get());
     }
 
     @Test
@@ -316,9 +320,7 @@ class EmployeeServiceTest {
         employees.add(employee0);
         employees.add(employee1);
 
-        assertThrows(NumberFormatException.class, () -> {
-            employeeService.getNHighestSalaries(2, employees);
-        });
+        assertThrows(NumberFormatException.class, () -> employeeService.getNHighestSalaries(2, employees));
     }
 
     @Test

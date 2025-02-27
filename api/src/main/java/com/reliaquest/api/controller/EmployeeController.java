@@ -1,15 +1,10 @@
 package com.reliaquest.api.controller;
 
-import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.reliaquest.api.exceptions.EmployeeValidationError;
 import com.reliaquest.api.models.CreateEmployee;
 import com.reliaquest.api.models.Employee;
 import com.reliaquest.api.services.EmployeeService;
-import java.net.URI;
-import java.util.List;
-import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,7 +12,14 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import java.net.URI;
+import java.util.List;
+import java.util.Optional;
+
+import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
+
 @Controller
+@SuppressWarnings({"rawtypes", "Necessary to match interface"})
 public class EmployeeController implements IEmployeeController {
     public static final Logger logger = LoggerFactory.getLogger(EmployeeController.class);
     private final EmployeeService employeeService;
@@ -98,11 +100,12 @@ public class EmployeeController implements IEmployeeController {
     public ResponseEntity createEmployee(Object employeeInput) {
         try {
             // todo rate limiting
+            //            todo logging throughout the project
             CreateEmployee createEmployee = objectMapper.convertValue(employeeInput, CreateEmployee.class);
             try {
                 employeeService.validateCreateEmployee(createEmployee);
             } catch (EmployeeValidationError e) {
-                return ResponseEntity.badRequest().body(e.getMessage());
+                return ResponseEntity.badRequest().build();
             }
             Employee employee = employeeService.createEmployee(createEmployee);
             URI location = ServletUriComponentsBuilder.fromCurrentRequest()
