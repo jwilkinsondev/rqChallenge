@@ -1,8 +1,16 @@
-
+#server calls
 ###
 // @no-log
 // @name get all employees from server directly
 GET http://localhost:8112/api/v1/employee
+
+###
+// @no-log
+// @name get employee
+http://localhost:8112/api/v1/employee/03a0e717-2d4c-4bbf-9656-f6f4f88813b1
+
+
+#api calls
 
 ###
 // @no-log
@@ -12,4 +20,11 @@ GET http://localhost:8111/
 ###
 // @no-log
 // @name search all employees
-GET http://localhost:8111/search/Ned
+GET http://localhost:8111/search/Teddy
+
+###
+// @no-log
+// @name get employee by id
+GET http://localhost:8111/b7164432-84a5-4da2-aacf-eedab9fb1c67
+
+

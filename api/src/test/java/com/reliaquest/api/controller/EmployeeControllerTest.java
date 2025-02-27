@@ -1,15 +1,12 @@
 package com.reliaquest.api.controller;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 import com.reliaquest.api.exceptions.ExternalApiException;
 import com.reliaquest.api.models.Employee;
 import com.reliaquest.api.services.EmployeeService;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -86,7 +83,28 @@ class EmployeeControllerTest {
     }
 
     @Test
-    void getEmployeeById() {}
+    void getEmployeeById() {
+        UUID id = UUID.randomUUID();
+        Employee employee = new Employee(id, "john doe", "45678", 26, "IT Technician", "foo@bar.com");
+
+        when(employeeService.getEmployeeById(id.toString())).thenReturn(Optional.of(employee));
+        ResponseEntity<Employee> result = employeeController.getEmployeeById(id.toString());
+        verify(employeeService, times(1)).getEmployeeById(id.toString());
+        assertEquals(HttpStatus.OK, result.getStatusCode());
+        assertEquals(employee, result.getBody());
+    }
+
+    @Test
+    void getEmployeeByIdShouldHandleException() {
+        UUID id = UUID.randomUUID();
+        when(employeeService.getEmployeeById(id.toString())).thenThrow(new ExternalApiException("An error occurred"));
+
+        ResponseEntity<Employee> result = employeeController.getEmployeeById(id.toString());
+        assertNotNull(result);
+        verify(employeeService, times(1)).getEmployeeById(id.toString());
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, result.getStatusCode());
+        assertNull(result.getBody());
+    }
 
     @Test
     void getHighestSalaryOfEmployees() {}

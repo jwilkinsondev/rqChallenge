@@ -7,9 +7,11 @@ import static org.mockito.Mockito.*;
 
 import com.reliaquest.api.exceptions.ExternalApiException;
 import com.reliaquest.api.models.Employee;
+import com.reliaquest.api.models.EmployeeListResponse;
 import com.reliaquest.api.models.EmployeeResponse;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -45,7 +47,7 @@ class EmployeeServiceTest {
     @Test
     void getAllEmployees() {
         List<Employee> employees = List.of();
-        EmployeeResponse body = new EmployeeResponse(employees);
+        EmployeeListResponse body = new EmployeeListResponse(employees);
         when(restTemplate.exchange(
                         eq("testEndpoint"), eq(HttpMethod.GET), eq(null), any(ParameterizedTypeReference.class)))
                 .thenReturn(ResponseEntity.ok(body));
@@ -100,7 +102,7 @@ class EmployeeServiceTest {
         employees.add(employee3);
         employees.add(employee4);
         employees.add(employee5);
-        EmployeeResponse body = new EmployeeResponse(employees);
+        EmployeeListResponse body = new EmployeeListResponse(employees);
 
         when(restTemplate.exchange(
                         eq("testEndpoint"), eq(HttpMethod.GET), eq(null), any(ParameterizedTypeReference.class)))
@@ -119,7 +121,7 @@ class EmployeeServiceTest {
                 new Employee(UUID.randomUUID(), "John Doe", "57000", 54, "Software Engineer", "foo@bar.com");
         employees.add(employee);
 
-        EmployeeResponse body = new EmployeeResponse(employees);
+        EmployeeListResponse body = new EmployeeListResponse(employees);
 
         when(restTemplate.exchange(
                         eq("testEndpoint"), eq(HttpMethod.GET), eq(null), any(ParameterizedTypeReference.class)))
@@ -136,7 +138,7 @@ class EmployeeServiceTest {
                 new Employee(UUID.randomUUID(), "John Doe", "57000", 54, "Software Engineer", "foo@bar.com");
         employees.add(employee);
 
-        EmployeeResponse body = new EmployeeResponse(employees);
+        EmployeeListResponse body = new EmployeeListResponse(employees);
 
         when(restTemplate.exchange(
                         eq("testEndpoint"), eq(HttpMethod.GET), eq(null), any(ParameterizedTypeReference.class)))
@@ -149,7 +151,7 @@ class EmployeeServiceTest {
         employee = new Employee(UUID.randomUUID(), "JOHN doe", "57000", 54, "Software Engineer", "foo@bar.com");
         employees.add(employee);
 
-        body = new EmployeeResponse(employees);
+        body = new EmployeeListResponse(employees);
 
         when(restTemplate.exchange(
                         eq("testEndpoint"), eq(HttpMethod.GET), eq(null), any(ParameterizedTypeReference.class)))
@@ -166,7 +168,7 @@ class EmployeeServiceTest {
                 new Employee(UUID.randomUUID(), "one fish two fish", "57000", 54, "Software Engineer", "foo@bar.com");
         employees.add(employee);
 
-        EmployeeResponse body = new EmployeeResponse(employees);
+        EmployeeListResponse body = new EmployeeListResponse(employees);
 
         when(restTemplate.exchange(
                         eq("testEndpoint"), eq(HttpMethod.GET), eq(null), any(ParameterizedTypeReference.class)))
@@ -174,5 +176,60 @@ class EmployeeServiceTest {
 
         List<Employee> response = employeeService.getEmployeesByNameSearch("sh tw");
         assertEquals(employees.get(0), response.get(0));
+    }
+
+    @Test
+    void getEmployeeById() {
+        UUID id = UUID.randomUUID();
+        Employee employee = new Employee(id, "John Doe", "57000", 54, "Software Engineer", "foo@bar.com");
+        when(restTemplate.exchange(
+                        eq("testEndpoint/" + id), eq(HttpMethod.GET), eq(null), any(ParameterizedTypeReference.class)))
+                .thenReturn(ResponseEntity.ok(new EmployeeResponse(employee)));
+        Employee response = employeeService.getEmployeeById(id.toString()).get();
+        assertEquals(employee, response);
+    }
+
+    @Test
+    void getEmployeeByIdShouldHandleNullBody() {
+        UUID id = UUID.randomUUID();
+        when(restTemplate.exchange(
+                        eq("testEndpoint/" + id), eq(HttpMethod.GET), eq(null), any(ParameterizedTypeReference.class)))
+                .thenReturn(ResponseEntity.ok(null));
+        Optional<Employee> result = employeeService.getEmployeeById(id.toString());
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void getEmployeeByIdShouldHandleNullData() {
+        UUID id = UUID.randomUUID();
+        when(restTemplate.exchange(
+                        eq("testEndpoint/" + id), eq(HttpMethod.GET), eq(null), any(ParameterizedTypeReference.class)))
+                .thenReturn(ResponseEntity.ok(new EmployeeResponse(null)));
+        Optional<Employee> result = employeeService.getEmployeeById(id.toString());
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void getEmployeeByIdShouldHandleRateLimit() {
+        UUID id = UUID.randomUUID();
+        doThrow(new HttpClientErrorException(HttpStatus.TOO_MANY_REQUESTS))
+                .when(restTemplate)
+                .exchange(
+                        eq("testEndpoint/" + id), eq(HttpMethod.GET), eq(null), any(ParameterizedTypeReference.class));
+        ExternalApiException exception =
+                assertThrows(ExternalApiException.class, () -> employeeService.getEmployeeById(id.toString()));
+        assertEquals("Failed to retrieve employee. Rate limit exceeded", exception.getMessage());
+    }
+
+    @Test
+    void getEmployeeByIdShouldHandleNon200() {
+        UUID id = UUID.randomUUID();
+        doThrow(new HttpClientErrorException(HttpStatus.BAD_GATEWAY))
+                .when(restTemplate)
+                .exchange(
+                        eq("testEndpoint/" + id), eq(HttpMethod.GET), eq(null), any(ParameterizedTypeReference.class));
+        ExternalApiException exception =
+                assertThrows(ExternalApiException.class, () -> employeeService.getEmployeeById(id.toString()));
+        assertEquals("Failed to retrieve employee", exception.getMessage());
     }
 }
