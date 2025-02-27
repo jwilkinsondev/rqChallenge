@@ -1,24 +1,23 @@
 package com.reliaquest.api.controller;
 
+import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
+import static org.springframework.http.HttpStatus.TOO_MANY_REQUESTS;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.reliaquest.api.exceptions.EmployeeValidationError;
 import com.reliaquest.api.exceptions.ExternalApiRateLimitException;
 import com.reliaquest.api.models.CreateEmployee;
 import com.reliaquest.api.models.Employee;
 import com.reliaquest.api.services.EmployeeService;
+import java.net.URI;
+import java.util.List;
+import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
-
-import java.net.URI;
-import java.util.List;
-import java.util.Optional;
-
-import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
-import static org.springframework.http.HttpStatus.TOO_MANY_REQUESTS;
 
 @Controller
 @SuppressWarnings({"rawtypes", "Necessary to match interface"})
@@ -33,17 +32,15 @@ public class EmployeeController implements IEmployeeController {
         this.objectMapper = objectMapper;
     }
 
-    //    todo return bad request status as appropriate
-    //    todo swagger api documentation
     @Override
     public ResponseEntity<List> getAllEmployees() {
         try {
             return ResponseEntity.ok(employeeService.getAllEmployees());
         } catch (ExternalApiRateLimitException e) {
-            logger.error(e.getMessage());
+            logger.debug(e.getMessage());
             return ResponseEntity.status(TOO_MANY_REQUESTS).build();
         } catch (Exception e) {
-            logger.error("Error getting all employees", e);
+            logger.debug("Error getting all employees", e);
             return ResponseEntity.status(INTERNAL_SERVER_ERROR).build();
         }
     }
@@ -53,10 +50,10 @@ public class EmployeeController implements IEmployeeController {
         try {
             return ResponseEntity.ok(employeeService.getEmployeesByNameSearch(searchString));
         } catch (ExternalApiRateLimitException e) {
-            logger.error(e.getMessage());
+            logger.debug(e.getMessage());
             return ResponseEntity.status(TOO_MANY_REQUESTS).build();
         } catch (Exception e) {
-            logger.error("Error searching employees", e);
+            logger.debug("Error searching employees", e);
             return ResponseEntity.status(INTERNAL_SERVER_ERROR).build();
         }
     }
@@ -71,10 +68,10 @@ public class EmployeeController implements IEmployeeController {
                 return ResponseEntity.ok(employee.get());
             }
         } catch (ExternalApiRateLimitException e) {
-            logger.error(e.getMessage());
+            logger.debug(e.getMessage());
             return ResponseEntity.status(TOO_MANY_REQUESTS).build();
         } catch (Exception e) {
-            logger.error("Error getting employee by id", e);
+            logger.debug("Error getting employee by id", e);
             return ResponseEntity.status(INTERNAL_SERVER_ERROR).build();
         }
     }
@@ -87,10 +84,10 @@ public class EmployeeController implements IEmployeeController {
             int highestSalary = Integer.parseInt(highestPaidEmployees.get(0).salary());
             return ResponseEntity.ok(highestSalary);
         } catch (ExternalApiRateLimitException e) {
-            logger.error(e.getMessage());
+            logger.debug(e.getMessage());
             return ResponseEntity.status(TOO_MANY_REQUESTS).build();
         } catch (Exception e) {
-            logger.error("Error getting highest salary of employees", e);
+            logger.debug("Error getting highest salary of employees", e);
             return ResponseEntity.status(INTERNAL_SERVER_ERROR).build();
         }
     }
@@ -104,10 +101,10 @@ public class EmployeeController implements IEmployeeController {
                     highestPaidEmployees.stream().map(Employee::name).toList();
             return ResponseEntity.ok(names);
         } catch (ExternalApiRateLimitException e) {
-            logger.error(e.getMessage());
+            logger.debug(e.getMessage());
             return ResponseEntity.status(TOO_MANY_REQUESTS).build();
         } catch (Exception e) {
-            logger.error("Error getting top ten highest earning employee names", e);
+            logger.debug("Error getting top ten highest earning employee names", e);
             return ResponseEntity.status(INTERNAL_SERVER_ERROR).build();
         }
     }
@@ -115,7 +112,6 @@ public class EmployeeController implements IEmployeeController {
     @Override
     public ResponseEntity createEmployee(Object employeeInput) {
         try {
-            //            todo logging throughout the project
             CreateEmployee createEmployee = objectMapper.convertValue(employeeInput, CreateEmployee.class);
             try {
                 employeeService.validateCreateEmployee(createEmployee);
@@ -129,10 +125,10 @@ public class EmployeeController implements IEmployeeController {
                     .toUri();
             return ResponseEntity.created(location).build();
         } catch (ExternalApiRateLimitException e) {
-            logger.error(e.getMessage());
+            logger.debug(e.getMessage());
             return ResponseEntity.status(TOO_MANY_REQUESTS).build();
         } catch (Exception e) {
-            logger.error("Error creating employee", e);
+            logger.debug("Error creating employee", e);
             return ResponseEntity.status(INTERNAL_SERVER_ERROR).build();
         }
     }
@@ -153,10 +149,10 @@ public class EmployeeController implements IEmployeeController {
                 return ResponseEntity.internalServerError().build();
             }
         } catch (ExternalApiRateLimitException e) {
-            logger.error(e.getMessage());
+            logger.debug(e.getMessage());
             return ResponseEntity.status(TOO_MANY_REQUESTS).build();
         } catch (Exception e) {
-            logger.error("Error deleting employee by id", e);
+            logger.debug("Error deleting employee by id", e);
             return ResponseEntity.status(INTERNAL_SERVER_ERROR).build();
         }
     }

@@ -1,5 +1,11 @@
 package com.reliaquest.api.services;
 
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.when;
+
 import com.reliaquest.api.exceptions.EmployeeValidationError;
 import com.reliaquest.api.exceptions.ExternalApiException;
 import com.reliaquest.api.exceptions.ExternalApiRateLimitException;
@@ -7,6 +13,7 @@ import com.reliaquest.api.models.CreateEmployee;
 import com.reliaquest.api.models.Employee;
 import com.reliaquest.api.models.EmployeeListResponse;
 import com.reliaquest.api.models.EmployeeResponse;
+import java.util.*;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -19,14 +26,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
-
-import java.util.*;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.when;
 
 @SuppressWarnings({"unchecked", "restTemplate requires ParameterizedTypeReference"})
 class EmployeeServiceTest {

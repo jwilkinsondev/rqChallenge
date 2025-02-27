@@ -7,6 +7,7 @@ import com.reliaquest.api.models.Employee;
 import com.reliaquest.api.models.EmployeeListResponse;
 import com.reliaquest.api.models.EmployeeResponse;
 import com.reliaquest.api.ports.*;
+import java.util.*;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
@@ -16,8 +17,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
-
-import java.util.*;
 
 @Service
 public class EmployeeService
@@ -34,8 +33,6 @@ public class EmployeeService
         this.employeesEndpoint = employeesEndpoint;
         this.restTemplate = restTemplate;
     }
-
-    // todo add backoff strategy for endpoints
 
     @Override
     public List<Employee> getAllEmployees() {
@@ -119,10 +116,8 @@ public class EmployeeService
 
     @Override
     public boolean deleteEmployeeByName(String name) {
-        // todo flush out create and delete logic and error handling
         try {
-            Map<String, String> requestBody = Collections.singletonMap("name", name);
-            HttpEntity<Map<String, String>> request = new HttpEntity<>(requestBody);
+            HttpEntity<Map<String, String>> request = new HttpEntity<>(Collections.singletonMap("name", name));
             ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
                     employeesEndpoint, HttpMethod.DELETE, request, new ParameterizedTypeReference<>() {});
             if (response.getBody() == null) {

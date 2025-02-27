@@ -1,10 +1,14 @@
 # Implement this API
 
-### Future Enhancements
+## Future Enhancements
 In the future, it would be good to add some sort of backoff strategy for the API calls in case of failures. This would help to prevent the API from being overwhelmed with requests in the case of a failure.
 
-### Local Testing
-With the services running locally you can utilize the scripts in [employees.http](src/main/resources/httpScripts/employees.http) to test the API.
+Add api documentation for the API endpoints. Something like a swagger UI would be a good addition.
+
+## Local Testing
+With the services running locally you can utilize the scripts in 
+[employees.http](src/main/resources/httpScripts/employees.http) to test the API.
+Alternatively, you can use the http tool of your choice and craft similar requests.
 
 #### In this assessment you will be tasked with filling out the functionality of different methods that will be listed further down.
 
