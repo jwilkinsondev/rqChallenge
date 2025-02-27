@@ -3,9 +3,13 @@ package com.reliaquest.api.controller;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.reliaquest.api.exceptions.EmployeeValidationError;
 import com.reliaquest.api.exceptions.ExternalApiException;
+import com.reliaquest.api.models.CreateEmployee;
 import com.reliaquest.api.models.Employee;
 import com.reliaquest.api.services.EmployeeService;
+import java.net.URI;
 import java.util.*;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -14,6 +18,9 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 class EmployeeControllerTest {
     EmployeeController employeeController;
@@ -22,10 +29,13 @@ class EmployeeControllerTest {
     @Mock
     EmployeeService employeeService;
 
+    @Mock
+    ObjectMapper objectMapper;
+
     @BeforeEach
     void setUp() {
         closeable = MockitoAnnotations.openMocks(this);
-        employeeController = new EmployeeController(employeeService);
+        employeeController = new EmployeeController(employeeService, objectMapper);
     }
 
     @AfterEach
@@ -185,8 +195,136 @@ class EmployeeControllerTest {
     }
 
     @Test
-    void createEmployee() {}
+    void createEmployee() {
+        Object inputObject = new Object() {};
+
+        CreateEmployee createEmployee = new CreateEmployee("john doe", "123456", 26, "IT Technician");
+        when(objectMapper.convertValue(inputObject, CreateEmployee.class)).thenReturn(createEmployee);
+        Employee createdEmployee = new Employee(
+                UUID.randomUUID(),
+                createEmployee.name(),
+                createEmployee.salary(),
+                createEmployee.age(),
+                createEmployee.title(),
+                "foo@bar.com");
+        when(employeeService.createEmployee(createEmployee)).thenReturn(createdEmployee);
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.setRequestURI("/");
+        RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
+
+        ResponseEntity<Employee> result = employeeController.createEmployee(inputObject);
+        verify(employeeService, times(1)).validateCreateEmployee(createEmployee);
+        verify(employeeService, times(1)).createEmployee(createEmployee);
+        assertEquals(HttpStatus.CREATED, result.getStatusCode());
+        assertEquals(
+                URI.create("http://localhost/" + createdEmployee.id()),
+                result.getHeaders().getLocation());
+    }
 
     @Test
-    void deleteEmployeeById() {}
+    void createEmployeeShouldHandleArgumentException() {
+        Object inputObject = new Object() {};
+        when(objectMapper.convertValue(inputObject, CreateEmployee.class))
+                .thenThrow(new IllegalArgumentException("Invalid input"));
+
+        ResponseEntity<Employee> result = employeeController.createEmployee(inputObject);
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, result.getStatusCode());
+        assertNull(result.getBody());
+    }
+
+    @Test
+    void createEmployeeShouldHandleInputValidation() {
+        Object inputObject = new Object() {};
+        CreateEmployee createEmployee = new CreateEmployee("john doe", "123456", 26, "IT Technician");
+        when(objectMapper.convertValue(inputObject, CreateEmployee.class)).thenReturn(createEmployee);
+        doThrow(new EmployeeValidationError("Name cannot be blank"))
+                .when(employeeService)
+                .validateCreateEmployee(createEmployee);
+
+        ResponseEntity<Employee> result = employeeController.createEmployee(inputObject);
+        assertEquals(HttpStatus.BAD_REQUEST, result.getStatusCode());
+        assertEquals("Name cannot be blank", result.getBody());
+    }
+
+    @Test
+    void createEmployeeShouldHandleCreationError() {
+        Object inputObject = new Object() {};
+
+        CreateEmployee createEmployee = new CreateEmployee("john doe", "123456", 26, "IT Technician");
+        when(objectMapper.convertValue(inputObject, CreateEmployee.class)).thenReturn(createEmployee);
+        doThrow(new ExternalApiException("Unable to create employee"))
+                .when(employeeService)
+                .createEmployee(createEmployee);
+
+        ResponseEntity<Employee> result = employeeController.createEmployee(inputObject);
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, result.getStatusCode());
+        assertNull(result.getBody());
+    }
+
+    @Test
+    void deleteEmployeeById() {
+        UUID id = UUID.randomUUID();
+        Employee employee = new Employee(id, "john doe", "123", 26, "IT Technician", "foo@bar.com");
+        when(employeeService.getEmployeeById(id.toString())).thenReturn(Optional.of(employee));
+        when(employeeService.deleteEmployeeByName("john doe")).thenReturn(true);
+
+        ResponseEntity<String> result = employeeController.deleteEmployeeById(id.toString());
+        verify(employeeService, times(1)).getEmployeeById(id.toString());
+        verify(employeeService, times(1)).deleteEmployeeByName("john doe");
+        assertEquals(HttpStatus.OK, result.getStatusCode());
+        assertEquals("john doe", result.getBody());
+    }
+
+    @Test
+    void deleteEmployeeByIdShouldHandleMissingEmployee() {
+        UUID id = UUID.randomUUID();
+        when(employeeService.getEmployeeById(id.toString())).thenReturn(Optional.empty());
+
+        ResponseEntity<String> result = employeeController.deleteEmployeeById(id.toString());
+        verify(employeeService, times(1)).getEmployeeById(id.toString());
+        verify(employeeService, never()).deleteEmployeeByName(anyString());
+        assertEquals(HttpStatus.NOT_FOUND, result.getStatusCode());
+        assertNull(result.getBody());
+    }
+
+    @Test
+    void deleteEmployeeByIdShouldHandleMissingName() {
+        UUID id = UUID.randomUUID();
+        Employee employee = new Employee(id, "", "123", 26, "IT Technician", "foo@bar.com");
+        when(employeeService.getEmployeeById(id.toString())).thenReturn(Optional.of(employee));
+
+        ResponseEntity<String> result = employeeController.deleteEmployeeById(id.toString());
+        verify(employeeService, times(1)).getEmployeeById(id.toString());
+        verify(employeeService, never()).deleteEmployeeByName(anyString());
+        assertEquals(HttpStatus.BAD_REQUEST, result.getStatusCode());
+        assertEquals("Employee name is blank", result.getBody());
+    }
+
+    @Test
+    void deleteEmployeeByIdShouldHandleDeleteError() {
+        UUID id = UUID.randomUUID();
+        Employee employee = new Employee(id, "john doe", "123", 26, "IT Technician", "foo@bar.com");
+        when(employeeService.getEmployeeById(id.toString())).thenReturn(Optional.of(employee));
+        when(employeeService.deleteEmployeeByName("john doe")).thenReturn(false);
+
+        ResponseEntity<String> result = employeeController.deleteEmployeeById(id.toString());
+        verify(employeeService, times(1)).getEmployeeById(id.toString());
+        verify(employeeService, times(1)).deleteEmployeeByName("john doe");
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, result.getStatusCode());
+        assertNull(result.getBody());
+    }
+
+    @Test
+    void deleteEmployeeByIdShouldHandleException() {
+        doThrow(new ExternalApiException("An error occurred"))
+                .when(employeeService)
+                .getEmployeeById(anyString());
+        UUID id = UUID.randomUUID();
+
+        ResponseEntity<String> result = employeeController.deleteEmployeeById(id.toString());
+        verify(employeeService, times(1)).getEmployeeById(id.toString());
+        verify(employeeService, never()).deleteEmployeeByName(anyString());
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, result.getStatusCode());
+        assertNull(result.getBody());
+    }
 }

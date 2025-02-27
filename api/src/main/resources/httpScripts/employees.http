@@ -37,4 +37,21 @@ GET http://localhost:8111/highestSalary
 // @name get ten highest earners
 GET http://localhost:8111/topTenHighestEarningEmployeeNames
 
+###
+// @no-log
+// @name create employee
+POST http://localhost:8111/
+Content-Type: application/json
 
+{
+  "name": "Teddy Foo",
+  "salary": "100000",
+  "age": 25,
+  "title": "Software Engineer"
+}
+
+
+###
+// @no-log
+// @name delete employee
+DELETE http://localhost:8111/d1f0da98-3438-4663-bbec-62750f54c72f
